@@ -1,0 +1,27 @@
+name: Price Drop Check
+
+on:
+  schedule:
+    - cron: '0 * * * *' # This means 'Run every hour'
+  workflow_dispatch: # This allows you to click a button to run it manually
+
+jobs:
+  check-price:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+      - name: Run Scraper
+        run: python scraper.py
+      - name: Upload Screenshot
+        uses: actions/upload-artifact@v3
+        with:
+          name: last_check_image
+          path: last_check.png
