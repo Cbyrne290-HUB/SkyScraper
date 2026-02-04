@@ -2,8 +2,8 @@ name: Price Drop Check
 
 on:
   schedule:
-    - cron: '0 * * * *' # Automatically runs every hour
-  workflow_dispatch:    # Allows you to click "Run workflow" manually for testing
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
 jobs:
   check-price:
@@ -20,17 +20,17 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          playwright install chromium
+          # The fix: --with-deps installs the Linux libraries Playwright needs
+          playwright install chromium --with-deps
 
       - name: Run Price Scraper
-        # This section connects your GitHub Secrets to the Python code
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python scraper.py
 
       - name: Upload Screenshot
-        if: always() # Takes a screenshot even if the scraper fails
+        if: always() # This ensures we get logs even if it fails
         uses: actions/upload-artifact@v4
         with:
           name: last_check_image
