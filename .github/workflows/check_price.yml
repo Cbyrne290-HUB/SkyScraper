@@ -2,8 +2,8 @@ name: Price Drop Check
 
 on:
   schedule:
-    - cron: '0 * * * *'
-  workflow_dispatch:
+    - cron: '0 * * * *' # Runs every hour
+  workflow_dispatch:    # Allows manual testing
 
 jobs:
   check-price:
@@ -20,7 +20,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          # The fix: --with-deps installs the Linux libraries Playwright needs
           playwright install chromium --with-deps
 
       - name: Run Price Scraper
@@ -30,7 +29,7 @@ jobs:
         run: python scraper.py
 
       - name: Upload Screenshot
-        if: always() # This ensures we get logs even if it fails
+        if: always() # Takes a screenshot even if the scraper crashes
         uses: actions/upload-artifact@v4
         with:
           name: last_check_image
