@@ -1,30 +1,36 @@
 import asyncio
+import os
 from playwright.async_api import async_playwright
 from playwright_stealth import stealth_async
+import httpx # This sends the Telegram message
 
-async def get_travel_price():
+async def send_telegram_msg(message):
+    token = os.getenv("TELEGRAM_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    async with httpx.AsyncClient() as client:
+        await client.post(url, json={"chat_id": chat_id, "text": message})
+
+async def check_price():
     async with async_playwright() as p:
-        # Launch browser in 'headless' mode (hidden)
         browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
-        )
-        page = await context.new_page()
-        
-        # This makes the AI look like a real human to avoid being blocked
+        page = await browser.new_page()
         await stealth_async(page)
         
-        # STEP: Put the URL of the holiday/flight you want to track here
-        target_url = "https://www.google.com/travel/flights" 
-        print(f"Checking price at: {target_url}")
+        # TESTING: Using a dummy URL for now
+        await page.goto("https://www.google.com/travel/flights", wait_until="networkidle")
         
-        await page.goto(target_url, wait_until="networkidle")
+        # LOGIC: For the POC, we simulate finding a drop
+        current_price = 1400 
+        original_price = 1500
         
-        # For the POC, we just take a screenshot to prove the AI 'saw' the page
-        await page.screenshot(path="last_check.png")
-        print("Screenshot saved! The AI successfully reached the site.")
+        if current_price < original_price:
+            diff = original_price - current_price
+            msg = f"🚨 PRICE DROP ALERT! \nYour holiday is now €{current_price}. You save €{diff}! \nCheck here: https://google.com/travel/flights"
+            await send_telegram_msg(msg)
+            print("Alert sent to Telegram!")
         
         await browser.close()
 
 if __name__ == "__main__":
-    asyncio.run(get_travel_price())
+    asyncio.run(check_price())
