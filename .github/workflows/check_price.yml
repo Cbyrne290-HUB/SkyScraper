@@ -2,26 +2,36 @@ name: Price Drop Check
 
 on:
   schedule:
-    - cron: '0 * * * *' # This means 'Run every hour'
-  workflow_dispatch: # This allows you to click a button to run it manually
+    - cron: '0 * * * *' # Automatically runs every hour
+  workflow_dispatch:    # Allows you to click "Run workflow" manually for testing
 
 jobs:
   check-price:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
+
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
           playwright install chromium
-      - name: Run Scraper
+
+      - name: Run Price Scraper
+        # This section connects your GitHub Secrets to the Python code
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python scraper.py
+
       - name: Upload Screenshot
-        uses: actions/upload-artifact@v3
+        if: always() # Takes a screenshot even if the scraper fails
+        uses: actions/upload-artifact@v4
         with:
           name: last_check_image
           path: last_check.png
